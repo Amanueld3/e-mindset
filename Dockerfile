@@ -8,11 +8,33 @@ RUN pecl install -o -f redis \
     && rm -rf /tmp/pear \
     && docker-php-ext-enable redis
 
-WORKDIR /var/www 
+WORKDIR /var/www
 COPY . .
 
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+COPY --from=composer:2.4.2 /usr/bin/composer /usr/bin/composer
 
-ENV PORT=8000 
-RUN ["chmod", "a+x", "docker/entrypoint.sh"]
-ENTRYPOINT [  "docker/entrypoint.sh" ]
+RUN docker-php-ext-install pdo pdo_mysql
+
+RUN docker-php-ext-install pdo pdo_mysql exif
+
+ENV PORT=8003
+
+RUN chmod +x Docker/entrypoint.sh
+ENTRYPOINT ["/bin/sh", "Docker/entrypoint.sh" ]
+
+
+
+# ==============================================================================
+#  node
+#
+
+FROM node:15-alpine as node
+
+WORKDIR /var/www
+COPY . .
+
+RUN npm install --global cross-env
+RUN npm install
+RUN npm run dev
+
+VOLUME /var/www/node_modules
